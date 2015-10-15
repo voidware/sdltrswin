@@ -1842,6 +1842,7 @@ void trs_get_event(int wait)
               // load BAS file
               char filename[FILENAME_MAX];
               char browse_dir[FILENAME_MAX];
+              int done = 0;
 
               if (trs_basic_loaded())
               {
@@ -1849,13 +1850,23 @@ void trs_get_event(int wait)
                   if (trs_gui_file_browse(browse_dir, filename,0,
                                           " BAS file ") != -1)
                   {
-                      if (trs_load_bas(filename))
+                      done = !trs_load_bas(filename);
+
+                      if (!done)
                           trs_gui_display_message("Error", "Load Failed");
+                      
                   }
+                  else done = 1;
               }
               else
               {
                   trs_gui_display_message("Error", "BASIC not loaded");
+              }
+
+              if (done)
+              {
+                  trs_screen_refresh();
+                  trs_x_flush();
               }
           }
           break;
