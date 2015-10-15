@@ -49,7 +49,10 @@
 #include "config.h"
 #include <stdio.h>
 #include <ctype.h>
+
+#ifndef _MSC_VER
 #include <sys/time.h>
+#endif
 
 #ifndef TRUE
 #define TRUE	(1)

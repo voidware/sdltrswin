@@ -56,8 +56,12 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#ifndef _MSC_VER
 #include <sys/time.h>
 #include <sys/file.h>
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -75,6 +79,9 @@
 
 #include "SDL/SDL.h"
 #include "blit.h"
+
+extern int trs_timer_is_turbo();
+extern int trs_timer_switch_turbo();
 
 extern char trs_char_data[][MAXCHARS][TRS_CHAR_HEIGHT];
 
@@ -147,7 +154,7 @@ static int disksizes[8] = {5,5,5,5,8,8,8,8};
 #ifdef MACOSX
 static int disksizesLoaded;
 #endif
-static int disksteps[8] = {1,1,1,1,1,1,1,1};
+static int disksteps[8] = {1,1,1,1,2,2,2,2};
 static SDL_Surface *trs_char[6][MAXCHARS];
 static SDL_Surface *trs_box[3][64];
 static SDL_Surface *image;
@@ -470,14 +477,14 @@ int trs_write_config_file(char *filename)
           trs_disk_getsize(7));
 #ifdef __linux          
   fprintf(config_file, "stepmap=%d,%d,%d,%d,%d,%d,%d,%d\n",
-          trs_disk_getsize(0),
-          trs_disk_getsize(1),
-          trs_disk_getsize(2),
-          trs_disk_getsize(3),
-          trs_disk_getsize(4),
-          trs_disk_getsize(5),
-          trs_disk_getsize(6),
-          trs_disk_getsize(7));
+          trs_disk_getstep(0),            /* Corrected to trs_disk_getstep vs getsize  */
+          trs_disk_getstep(1),            /* Corrected by Larry Kraemer 08-01-2011 */
+          trs_disk_getstep(2),
+          trs_disk_getstep(3),
+          trs_disk_getstep(4),
+          trs_disk_getstep(5),
+          trs_disk_getstep(6),
+          trs_disk_getstep(7));
 #endif          
   if (trs_disk_truedam)
     fprintf(config_file,"truedam\n");
@@ -569,22 +576,22 @@ void trs_set_to_defaults(void)
   grafyx_set_microlabs(FALSE);
   trs_show_led = TRUE;
   trs_disk_doubler = TRSDISK_BOTH;
-  disksizes[0] = 5;
-  disksizes[1] = 5;
+  disksizes[0] = 5;            /* Disk Sizes are 5" or 8" for all Eight Default Drives */
+  disksizes[1] = 5;            /* Corrected by Larry Kraemer 08-01-2011 */
   disksizes[2] = 5;
   disksizes[3] = 5;
   disksizes[4] = 8;
   disksizes[5] = 8;
   disksizes[6] = 8;
   disksizes[7] = 8;
-  disksteps[0] = 1;
-  disksteps[1] = 1;
+  disksteps[0] = 1;            /* Disk Steps are 1 for Single Step, 2 for Double Step for all Eight Default Drives */
+  disksteps[1] = 1;            /* Corrected by Larry Kraemer 08-01-2011 */
   disksteps[2] = 1;
   disksteps[3] = 1;
-  disksteps[4] = 1;
-  disksteps[5] = 1;
-  disksteps[6] = 1;
-  disksteps[7] = 1;
+  disksteps[4] = 2;
+  disksteps[5] = 2;
+  disksteps[6] = 2;
+  disksteps[7] = 2;
   trs_disk_truedam = 0;
   cassette_default_sample_rate = DEFAULT_SAMPLE_RATE;
   trs_uart_switches = 0x7 | TRS_UART_NOPAR | TRS_UART_WORD8;
@@ -978,11 +985,11 @@ void trs_disk_setsizes(void)
 }
 
 void trs_disk_setsteps(void)
-{
+{            /* Disk Steps are 1 for Single Step or 2 for Double Step for all Eight Default Drives */
   int j;
   
   for (j=0; j<=7; j++) {
-    if (disksteps[j] == 1 || disksteps[j] == 1) {
+    if (disksteps[j] == 1 || disksteps[j] == 2) {
             trs_disk_setstep(j, disksteps[j]);
     }
   }
@@ -1465,12 +1472,25 @@ void ProcessCopySelection(int selectAll)
 
 void trs_end_copy() 
 {
-	copyStatus = COPY_CLEAR;
+    copyStatus = COPY_CLEAR;
 }
 
+static int wasTurbo;
+ 
 void trs_paste_started()
 {
-	paste_state = PASTE_GETNEXT;
+    // activate turbo whilst in paste
+    wasTurbo = trs_timer_is_turbo();
+    if (!wasTurbo) trs_timer_switch_turbo();
+
+    paste_state = PASTE_GETNEXT;
+}
+
+void trs_paste_ended()
+{
+    // go back to normal speed, unless already turbo
+    if (!wasTurbo) trs_timer_switch_turbo();
+    paste_state = PASTE_IDLE;
 }
 
 void trs_select_all()
@@ -1563,6 +1583,87 @@ char *trs_get_copy_data()
   return copy_data;
 }
 
+#define BASIC_START     0x40a4
+#define BASIC_END       0x40F9
+
+static char* getbasline(FILE* fp)
+{
+    static char line[280];
+    int c;
+    char* p = line;
+
+    for (;;)
+    {
+        c = getc(fp);
+        if (c == EOF) return 0;
+        
+        int n = p - line;
+        if (n > 3 && !c) break; // EOL
+        if (n < sizeof(line)-1) *p++ = c;
+    }
+    *p = 0;
+    return line;
+}
+
+int trs_load_bas(const char* filename)
+{
+    FILE* fp;
+    int p = mem_read_word(BASIC_START);
+    if (!p) return -1; // basic not loaded
+    fp = fopen(filename, "rb");
+    if (fp)
+    {
+        int pstart;
+        int li;
+        
+        if (getc(fp) != 0xFF)
+        {
+            debug("expected BAS header");
+            return -1;
+        }
+        
+        for (;;)
+        {
+            unsigned char* ln = getbasline(fp);
+            if (!ln) break;
+
+            pstart = p;
+
+            p += 2;
+            ln += 2;
+
+            mem_write(p++, (li = *ln++));            
+            li = li + (*ln << 8);
+            mem_write(p++, *ln++);            
+
+            printf("line: %d\n", li);
+
+            for (;;)
+            {
+                mem_write(p++, *ln);
+                if (!*ln++) break;
+            }
+            
+            // patch the address of `p' into start 
+            mem_write_word(pstart, p);
+            
+        }
+
+        fclose(fp);
+
+        // end with zero address
+        mem_write_word(p, 0);
+        mem_write_word(BASIC_END, p + 2);
+        
+    }
+    else
+    {
+        debug("Can't open BASIC file '%s'\n", filename);
+        return -1;
+    }
+    return 0;
+}
+
 /* 
  * Get and process SDL event(s).
  *   If wait is true, process one event, blocking until one is available.
@@ -1577,52 +1678,63 @@ void trs_get_event(int wait)
   Uint32 keyup;
   int ret;
 
-  if (trs_model > 1) {
-    (void)trs_uart_check_avail();
-  }
+  if (trs_model > 1) 
+      trs_uart_check_avail();
 
   trs_x_flush();
 
   do {
-    if (paste_state != PASTE_IDLE) {
-		static unsigned short paste_key_uni;
-		
-  	    if (SDL_PollEvent(&event)) {
-			if (event.type == SDL_KEYDOWN) {
-				if (paste_state == PASTE_KEYUP) {
-					trs_xlate_keysym(0x10000 | paste_key_uni);
-				}
-				paste_state = PASTE_IDLE;
-				return;
-			}
-		}
 
-		if (paste_state == PASTE_GETNEXT) {
-			if (!PasteManagerGetChar(&paste_key_uni)) 
-				paste_lastkey = TRUE;
-			else
-				paste_lastkey = FALSE;
-			trs_xlate_keysym(paste_key_uni);
-			paste_state = PASTE_KEYDOWN;
-			return;
-		} else	if (paste_state == PASTE_KEYDOWN) {
-			trs_xlate_keysym(0x10000 | paste_key_uni);
-			paste_state = PASTE_KEYUP;
-			return;
-		} else if (paste_state == PASTE_KEYUP) {
-			if (paste_lastkey)
-				paste_state = PASTE_IDLE;
-			else
-				paste_state = PASTE_GETNEXT;
-		}
-    }
+      if (paste_state != PASTE_IDLE)
+      {
+          static unsigned short paste_key_uni;
+		
+          if (SDL_PollEvent(&event))
+          {
+              if (event.type == SDL_KEYDOWN)
+              {
+                  if (paste_state == PASTE_KEYUP) {
+                      trs_xlate_keysym(0x10000 | paste_key_uni);
+                  }
+                  trs_paste_ended();
+                  return;
+              }
+          }
+          
+          if (paste_state == PASTE_GETNEXT)
+          {
+              if (!trs_waiting_for_key())
+                  return;
+
+              if (!PasteManagerGetChar(&paste_key_uni)) 
+                  paste_lastkey = TRUE;
+              else
+                  paste_lastkey = FALSE;
+              
+              trs_xlate_keysym(paste_key_uni);
+              paste_state = PASTE_KEYDOWN;
+              return;
+          }
+          else if (paste_state == PASTE_KEYDOWN) 
+          {
+              trs_xlate_keysym(0x10000 | paste_key_uni);
+              paste_state = PASTE_KEYUP;
+              return;
+          }
+          else if (paste_state == PASTE_KEYUP) 
+          {
+              if (paste_lastkey) trs_paste_ended();
+              else
+                  paste_state = PASTE_GETNEXT;
+          }
+      }
 		  
-    if (wait) {
-      SDL_WaitEvent(&event);
-    } else {
-      if (!SDL_PollEvent(&event)) return;
-    }
-    switch(event.type) {
+      if (wait) 
+          SDL_WaitEvent(&event);
+      else 
+          if (!SDL_PollEvent(&event)) return;
+      
+      switch(event.type) {
     case SDL_QUIT:
      trs_exit();
      break;
@@ -1694,6 +1806,28 @@ void trs_get_event(int wait)
         keysym.unicode = 0;
         keysym.sym = 0;
         break;
+      case SDLK_F1:
+          // unused
+          {
+              trs_load_bas("prog.bas");
+#if 0
+              int base = mem_read_word(BASIC_START);
+              if (base > 0)  // otherwise basic not loaded
+              {
+                  int endp = mem_read_word(BASIC_END);
+                  int p;
+                  int cc = 0;
+                  debug("base:%0x\n", base);
+                  for (p = base; p < endp; ++p)
+                  {
+                      printf("%02x ", mem_read(p));
+                      if (++cc > 100) 
+                          break;
+                  }
+              }
+#endif
+          }
+          break;
       case SDLK_F7:
 #ifdef MACOSX
         if (fullscreen) 

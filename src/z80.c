@@ -3016,8 +3016,8 @@ int z80_run(int continuous)
     Uchar instruction;
     Ushort address; /* generic temps */
     int ret = 0;
-    trs_continuous = continuous;
 	tstate_t t_delta;
+    trs_continuous = continuous;
 
     /* loop to do a z80 instruction */
     do {
@@ -3025,16 +3025,17 @@ int z80_run(int continuous)
 	if (z80_state.t_count > last_t_count)
 		t_delta = z80_state.t_count - last_t_count;
 	else
-		t_delta = last_t_count - z80_state.t_count;
-    if (t_delta >= cycles_per_timer) {
+            t_delta = last_t_count - z80_state.t_count;
+
+        if (t_delta >= cycles_per_timer) 
+        {
 	    trs_get_event(0);
-        if (trs_paused) {
-          while (trs_paused)
-            trs_get_event(1);
-        } 
-		trs_timer_sync_with_host();
-		last_t_count = z80_state.t_count;
-		}
+            if (trs_paused) {
+                while (trs_paused) trs_get_event(1);
+            } 
+            trs_timer_sync_with_host();
+            last_t_count = z80_state.t_count;
+        }
 	
 	instruction = mem_read(REG_PC++);
 	

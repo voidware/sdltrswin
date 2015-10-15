@@ -27,6 +27,7 @@
    Last modified on Wed May 07 09:12:00 MST 2006 by markgrebe
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>

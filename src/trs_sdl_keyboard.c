@@ -720,7 +720,8 @@ void trs_xlate_keysym(int keysym)
     KeyTable* kt;
     static int shift_action = TK_Neutral;
 
-    if (keysym == 0x10000) {
+    if (keysym == 0x10000) 
+    {
 	/* force all keys up */
 	queue_key(TK_AllKeysUp);
 	shift_action = TK_Neutral;
@@ -733,20 +734,25 @@ void trs_xlate_keysym(int keysym)
     if (kt->bit_action == TK_NULL) return;
     if (trs_emulate_joystick(key_down, kt->bit_action)) return;
 
-    if (key_down) {
+    if (key_down) 
+    {
       if (shift_action != TK_ForceShiftPersistent &&
-	  shift_action != kt->shift_action) {
-	shift_action = kt->shift_action;
-	queue_key(shift_action);
+	  shift_action != kt->shift_action) 
+      {
+          shift_action = kt->shift_action;
+          queue_key(shift_action);
       }
+      
       queue_key(kt->bit_action);
-    } else {
-      queue_key(kt->bit_action | 0x10000);
-      if (shift_action != TK_Neutral &&
-	  shift_action == kt->shift_action) {
-	shift_action = TK_Neutral;
-	queue_key(shift_action);
-      }
+    } 
+    else
+    {
+        queue_key(kt->bit_action | 0x10000);
+        if (shift_action != TK_Neutral && shift_action == kt->shift_action)
+        {
+            shift_action = TK_Neutral;
+            queue_key(shift_action);
+        }
     }
 }
 
@@ -830,13 +836,14 @@ int trs_kb_mem_read(int address)
 
     /* Avoid delaying key state changes in queue for too long */
     if (key_heartbeat > 2) {
-      do {
-	key = trs_next_key(0);
-	if (key >= 0) {
-	  change_keystate(key);
-	  timesseen = 1;
-	}
-      } while (key >= 0);
+        do {
+            key = trs_next_key(0);
+            if (key >= 0)
+            {
+                change_keystate(key);
+                timesseen = 1;
+            }
+        } while (key >= 0);
     }
 
     /* After each key state change, impose a timeout before the next one
@@ -859,24 +866,27 @@ int trs_kb_mem_read(int address)
 	   needed (at least) for NEWDOS80, which pushes 2 extra bytes
 	   on the stack.  */
 	wait = 0;
-	if (timesseen++ >= 16) {
-	  recursion = 1;
-	  for (i=0; i<=4; i+=2) {
-	    if (mem_read_word(REG_SP + 2 + i) == 0x4015) {
-	      wait = mem_read_word(REG_SP + 10 + i) == 0x004c;
-	      break;
-	    }
-	  }
-	  recursion = 0;
+	if (timesseen++ >= 16)
+        {
+            recursion = 1;
+            for (i=0; i<=4; i+=2) {
+                if (mem_read_word(REG_SP + 2 + i) == 0x4015)
+                {
+                    wait = mem_read_word(REG_SP + 10 + i) == 0x004c;
+                    break;
+                }
+            }
+            recursion = 0;
 	}
 	/* Get the next key */
 	key = trs_next_key(wait);
 	key_stretch_timeout = z80_state.t_count + stretch_amount;
     }
 
-    if (key >= 0) {
-      change_keystate(key);
-      timesseen = 1;
+    if (key >= 0)
+    {
+        change_keystate(key);
+        timesseen = 1;
     }
     key_heartbeat = 0;
     return kb_mem_value(address);
@@ -897,16 +907,24 @@ void queue_key(int state)
 #if QDEBUG
   debug("queue_key 0x%x\n", state);
 #endif
-  if (key_queue_entries < KEY_QUEUE_SIZE) {
-    key_queue_entries++;
-  } else {
-#if QDEBUG
-    debug("queue_key overflow\n");
+  if (key_queue_entries < KEY_QUEUE_SIZE) 
+      key_queue_entries++;
+  else
+  {
+#if defined(QDEBUG) || defined(DEBUG)
+      debug("queue_key overflow\n");
 #endif
   }
 }
 
-int dequeue_key()
+static int k_waiting;
+
+int trs_waiting_for_key()
+{
+    return k_waiting;
+}
+
+static int dequeue_key()
 {
   int rval = -1;
 
@@ -924,6 +942,7 @@ int dequeue_key()
 
 int trs_next_key(int wait)
 {
-  return dequeue_key();
-
+    k_waiting = wait;
+    return dequeue_key();
 }
+

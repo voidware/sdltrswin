@@ -37,6 +37,7 @@
 /*
  * Emulation of the Radio Shack TRS-80 Model I/III/4/4P serial port.
  */
+#include "config.h"
 #include <errno.h>
 #ifndef _WIN32
 #include <termios.h>
@@ -44,7 +45,11 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#ifndef _MSC_VER
 #include <sys/file.h>
+#endif
+
 #include <fcntl.h>
 #include <string.h>
 #include "trs.h"
@@ -158,7 +163,7 @@ xlate_baud(int trs_baud)
 void
 trs_uart_init(int reset_button)
 {
-  int err;
+  //int err;
 #if UARTDEBUG
   debug("trs_uart_init\n");
 #endif
@@ -250,8 +255,6 @@ trs_uart_switches_in()
 void
 trs_uart_baud_out(int value)
 {
-  int err;
-  int bits;
 #if UARTDEBUG
   debug("trs_uart_baud_out 0x%02x\n", value);
 #endif

@@ -44,9 +44,6 @@
 #include "trs_sdl_keyboard.h"
 #include "z80.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
 
 #define LEFT_VERT_LINE      149
 #define RIGHT_VERT_LINE     170

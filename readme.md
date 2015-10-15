@@ -1,4 +1,10 @@
-## Updates
+# TRS-80 Emulator for Windows
+
+## Building on Windows
+
+The project compiles with MSVC 2015 Community edition (which is free).
+
+Load the solution src/win32/sdltrs/sdltrs.sln
 
 -----
 

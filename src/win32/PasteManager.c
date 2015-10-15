@@ -1,6 +1,8 @@
-#include "windows.h"
+#include <windows.h>
+#include "config.h"
 
 extern int trs_paste_started();
+extern void trs_end_copy() ;
 
 static int charCount = 0;
 static unsigned char *pasteString;

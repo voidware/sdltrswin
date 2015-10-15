@@ -58,7 +58,7 @@ typedef unsigned char Uchar;
 #include "wtypes.h"
 #include "winnt.h"
 
-static int win_set_readonly(char *filename, int readonly)
+static void win_set_readonly(char *filename, int readonly)
 {
   DWORD attr;
   attr = GetFileAttributes(filename);
@@ -71,8 +71,6 @@ static int win_set_readonly(char *filename, int readonly)
 void trs_protect_disk(int drive, int writeprot)
 {
   char prot_filename[FILENAME_MAX];
-  struct stat st;
-  int newmode;
   FILE *f;
   char *diskname;
   int emutype = trs_disk_getdisktype(drive);
@@ -123,7 +121,6 @@ void trs_protect_disk(int drive, int writeprot)
 void trs_protect_hard(int drive, int writeprot)
 {
   char prot_filename[FILENAME_MAX];
-  struct stat st;
   int newmode;
   char *diskname;
   FILE *f;

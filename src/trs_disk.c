@@ -59,7 +59,11 @@
 #include "trs_hard.h"
 #include "trs_state_save.h"
 #include <stdio.h>
+
+#ifndef _MSC_VER
 #include <sys/time.h>
+#endif
+
 #include <time.h>
 #include <sys/stat.h>
 #include <stdlib.h>
