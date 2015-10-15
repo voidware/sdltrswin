@@ -99,7 +99,7 @@ static void trs_gui_limit_string(char *orig, char *limited, int limit);
 static void trs_remove_dir(char *file, char *dir);
 static void trs_add_extension(char *filename, char *ext);
 static int trs_gui_get_key(void);
-static void trs_gui_display_message(char* title, char *message);
+//static void trs_gui_display_message(char* title, char *message);
 static void trs_gui_create_filename_list();
 static void trs_gui_add_to_filename_list(char * filename);
 static int trs_gui_filename_cmp(char *name1, char *name2);

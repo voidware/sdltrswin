@@ -1605,6 +1605,12 @@ static char* getbasline(FILE* fp)
     return line;
 }
 
+static int trs_basic_loaded()
+{
+    int p = mem_read_word(BASIC_START);
+    return p != 0;
+}
+
 int trs_load_bas(const char* filename)
 {
     FILE* fp;
@@ -1615,11 +1621,36 @@ int trs_load_bas(const char* filename)
     {
         int pstart;
         int li;
-        
-        if (getc(fp) != 0xFF)
+        int cc;
+        int d3 = 0;
+
+        // handle preamble
+
+        for (cc = 0;;++cc)
         {
-            debug("expected BAS header");
-            return -1;
+            int c = fgetc(fp);
+            if (c == EOF) return -1; // fail
+
+            if (!c) continue;
+            if (!cc && c == 0xFF)
+            {
+                // initial char indicates BAS file
+                // content follows
+                break;
+            }
+
+            if (c == 0xd3)
+            {
+                // part of CAS sync
+                if (++d3 == 3)
+                {
+                    // usually see 3 D3's then one random char
+                    fgetc(fp); // eat random char
+
+                    // basic content follows (i hope)
+                    break;
+                }
+            }
         }
         
         for (;;)
@@ -1636,7 +1667,7 @@ int trs_load_bas(const char* filename)
             li = li + (*ln << 8);
             mem_write(p++, *ln++);            
 
-            printf("line: %d\n", li);
+            //printf("line: %d\n", li);
 
             for (;;)
             {
@@ -1806,26 +1837,26 @@ void trs_get_event(int wait)
         keysym.unicode = 0;
         keysym.sym = 0;
         break;
-      case SDLK_F1:
-          // unused
+      case SDLK_F2:
           {
-              trs_load_bas("prog.bas");
-#if 0
-              int base = mem_read_word(BASIC_START);
-              if (base > 0)  // otherwise basic not loaded
+              // load BAS file
+              char filename[FILENAME_MAX];
+              char browse_dir[FILENAME_MAX];
+
+              if (trs_basic_loaded())
               {
-                  int endp = mem_read_word(BASIC_END);
-                  int p;
-                  int cc = 0;
-                  debug("base:%0x\n", base);
-                  for (p = base; p < endp; ++p)
+                  trs_expand_dir(trs_disk_dir, browse_dir);
+                  if (trs_gui_file_browse(browse_dir, filename,0,
+                                          " BAS file ") != -1)
                   {
-                      printf("%02x ", mem_read(p));
-                      if (++cc > 100) 
-                          break;
+                      if (trs_load_bas(filename))
+                          trs_gui_display_message("Error", "Load Failed");
                   }
               }
-#endif
+              else
+              {
+                  trs_gui_display_message("Error", "BASIC not loaded");
+              }
           }
           break;
       case SDLK_F7:

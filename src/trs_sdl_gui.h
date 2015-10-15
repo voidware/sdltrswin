@@ -39,6 +39,7 @@ void trs_gui_write_config(void);
 int  trs_gui_read_config(void);
 void trs_gui_new_machine(void);
 void trs_gui(void);
+void trs_gui_display_message(char* title, char *message);
 
 void trs_gui_refresh();
 void trs_gui_clear_screen(void);
