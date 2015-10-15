@@ -10,9 +10,11 @@ Load the solution src/win32/sdltrs/sdltrs.sln
 
 ## Running
 
-cd bin
-getd (optionally copy here the debug binary, after building)
-go.bat
+cd bin  
+getd (optionally copy here the debug binary, after building)  
+go.bat  
+
+
 
 
 -----
