@@ -1476,20 +1476,38 @@ void trs_end_copy()
 }
 
 static int wasTurbo;
+static int oldTurboRate;
  
 void trs_paste_started()
 {
-    // activate turbo whilst in paste
+    // remember the original state
     wasTurbo = trs_timer_is_turbo();
-    if (!wasTurbo) trs_timer_switch_turbo();
+    oldTurboRate = timer_overclock_rate;
+
+    // if we're in turbo, stop it
+    if (wasTurbo) trs_timer_switch_turbo();
+
+    // set the new rate
+    timer_overclock_rate = 1000;
+
+    // engage turbo
+    trs_timer_switch_turbo();
 
     paste_state = PASTE_GETNEXT;
 }
 
 void trs_paste_ended()
 {
-    // go back to normal speed, unless already turbo
-    if (!wasTurbo) trs_timer_switch_turbo();
+    // stop turbo
+    trs_timer_switch_turbo();
+
+    // restore original turbo rate
+    timer_overclock_rate = oldTurboRate;
+
+    // re-enable original turbo 
+    if (wasTurbo)
+        trs_timer_switch_turbo();
+    
     paste_state = PASTE_IDLE;
 }
 

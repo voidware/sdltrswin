@@ -14,14 +14,9 @@ This emulator is SDLTRS with some improvements.
 ### Paste BASIC text file
 
 * load basic (BASIC)
-* set turbo speed to 1000 (Press F7)
-* do _not_ engage turbo!
 * from another window, select BASIC text and "copy" to clipboard
 * on TRS-80 paste (eg CTRL-V)
-* the program will be typed in fast (will use turbo during this phase).
-* Optionally, set turbo back to sensible value (eg 10)
 * RUN
-
 
 ## Building on Windows
 
