@@ -1,0 +1,9 @@
+TAGS
+src/**/Debug
+src/**/Release
+**/.vs
+**/*.sdf
+**/*.user
+**/*~
+**/*.VC.db
+**/*.VC.opendb

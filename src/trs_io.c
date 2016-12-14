@@ -378,7 +378,9 @@ int z80_in(int port)
       /* GENIE location of printer port */
       return trs_printer_read();
     case 0xFF:
-      return (modesel ? 0x7f : 0x3f) | trs_cassette_in();
+        // modesel bit flipped on read
+        // see http://www.vcfed.org/forum/showthread.php?55367-wide-mode-detection-for-model-I-on-TRS32
+      return (!modesel ? 0x7f : 0x3f) | trs_cassette_in();
     default:
       break;
     }
