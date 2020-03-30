@@ -1397,7 +1397,7 @@ void ProcessCopySelection(int selectAll)
 				return;
 #endif			
 			if ((copyStatus == COPY_IDLE) &&
-				(mouse & SDL_BUTTON(1) == 0)) {
+				((mouse & SDL_BUTTON(1)) == 0)) {
 				return;		
 			}
 #ifdef MACOSX			
@@ -1519,7 +1519,7 @@ void trs_select_all()
 /*
  * Flush output to X server
  */
-inline void trs_x_flush()
+void trs_x_flush()
 {
   if (!trs_emu_mouse) 
       {
@@ -1807,7 +1807,7 @@ void trs_get_event(int wait)
 #ifdef MACOSX
 	  if (keysym.mod & MENU_MOD == 0) {
 #else
-	  if (keysym.mod & KMOD_CTRL == 0) {
+	  if ((keysym.mod & KMOD_CTRL) == 0) {
 #endif
 	    if (copyStatus != COPY_IDLE)
 		  copyStatus = COPY_CLEAR;

@@ -86,7 +86,7 @@
 
 int trs_disk_nocontroller = 0;
 int trs_disk_doubler = TRSDISK_BOTH;
-float trs_disk_holewidth = 0.01;
+float trs_disk_holewidth = 0.01f;
 int trs_disk_truedam = 0;
 int trs_disk_debug_flags = 0;
 
@@ -139,8 +139,8 @@ FDCState state, other_state;
 
 /* Gap 0+1 and gap 4 angular size, used in Read Address timing emulation.
    Units: fraction of a complete circle. */
-#define GAP1ANGLE 0.020 
-#define GAP4ANGLE 0.050
+#define GAP1ANGLE 0.020f 
+#define GAP4ANGLE 0.050f
 
 /* How long does emulated motor stay on after drive selected? (us of
    emulated time) */
@@ -959,8 +959,8 @@ trs_disk_insert(int drive, char *diskname)
   } else if (d->emutype == DMK) {
     fseek(d->file, DMK_NTRACKS, 0);
     d->u.dmk.ntracks = (unsigned char) getc(d->file);
-    d->u.dmk.tracklen = (unsigned char) getc(d->file) +
-      (((unsigned char) getc(d->file)) << 8);
+    d->u.dmk.tracklen = (unsigned char) getc(d->file);
+    d->u.dmk.tracklen += ((unsigned char) getc(d->file)) << 8; // fix from jens
     c = getc(d->file);
     d->u.dmk.nsides = (c & DMK_SSIDE_OPT) ? 1 : 2;
     d->u.dmk.sden = (c & DMK_SDEN_OPT) != 0;
@@ -2893,7 +2893,7 @@ trs_disk_command_write(unsigned char cmd)
 	   that the sectors are all the same angular length (bytlen).
 	*/
 	a = angle();
-	bytlen = (1.0 - GAP1ANGLE - GAP4ANGLE)/((float)JV1_SECPERTRK);
+	bytlen = (1.0f - GAP1ANGLE - GAP4ANGLE)/((float)JV1_SECPERTRK);
 	i = (int)( (a - GAP1ANGLE) / bytlen + 1.0 );
 	if (i >= JV1_SECPERTRK) {
 	  /* Wrap around to start of track */
@@ -2933,7 +2933,7 @@ trs_disk_command_write(unsigned char cmd)
 	*/
 	a = angle();
 	b = GAP1ANGLE;
-	bytlen = (1.0 - GAP1ANGLE - GAP4ANGLE)/((float)totbyt);
+	bytlen = (1.0f - GAP1ANGLE - GAP4ANGLE)/((float)totbyt);
 	i = id_index;
 	for (;;) {
 	  SectorId *sid = &d->u.jv3.id[d->u.jv3.sorted_id[i]];
@@ -3474,7 +3474,7 @@ real_verify()
 }
 
 void
-real_restore(curdrive)
+real_restore(int curdrive)
 {
 #if __linux
   DiskState *d = &disk[curdrive];

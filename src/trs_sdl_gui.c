@@ -155,7 +155,7 @@ void trs_gui_center_text(char *text, int y, int invert)
   int position = (64-strlen(text))/2 + y * 64;
   int i;
   
-  for (i=0;i<strlen(text);i++)
+  for (i=0;i<(int)strlen(text);i++)
     trs_gui_write_char(position+i,text[i],invert);
 }
 

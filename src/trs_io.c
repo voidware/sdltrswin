@@ -380,7 +380,8 @@ int z80_in(int port)
     case 0xFF:
         // modesel bit flipped on read
         // see http://www.vcfed.org/forum/showthread.php?55367-wide-mode-detection-for-model-I-on-TRS32
-      return (!modesel ? 0x7f : 0x3f) | trs_cassette_in();
+      //return (modesel ? 0x7f : 0x3f) | trs_cassette_in();
+	  return (!modesel ? 0x7f : 0x3f) | trs_cassette_in();
     default:
       break;
     }

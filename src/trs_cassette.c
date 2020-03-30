@@ -777,7 +777,7 @@ transition_out(int value)
       (ddelta_us / (1000000.0/cassette_sample_rate) + 0.5);
     if (nsamples == 0) nsamples = 1; /* always at least one sample */
     cassette_roundoff_error =
-      nsamples * (1000000.0/cassette_sample_rate) - ddelta_us;
+      nsamples * (1000000.0f/cassette_sample_rate) - ddelta_us;
 #if CASSDEBUG
     debug("%d %4lu %d -> %3lu\n", cassette_value,
 	  z80_state.t_count - cassette_transition, value, nsamples);
@@ -997,9 +997,9 @@ transition_in()
       if (z80_state.nmi) break;
     } while (next == cassette_value && maxsamples-- > 0);
     cassette_next = next;
-    delta_ts = nsamples * (1000000.0/cassette_sample_rate)
+    delta_ts = nsamples * (1000000.0f/cassette_sample_rate)
       * z80_state.clockMHz - cassette_roundoff_error;
-    cassette_delta = (unsigned long) delta_ts + 0.5;
+    cassette_delta = (unsigned long)(delta_ts + 0.5f);
     cassette_roundoff_error = cassette_delta - delta_ts;
 #if CASSDEBUG
     debug("%3lu -> %d %4lu %d\n",
@@ -1203,9 +1203,9 @@ trs_orch90_out(int channels, int value)
     ddelta_us = 300000.0;
   }
   nsamples = (unsigned long)
-    (ddelta_us / (1000000.0/cassette_sample_rate) + 0.5);
+    (ddelta_us / (1000000.0f/cassette_sample_rate) + 0.5);
   cassette_roundoff_error =
-    nsamples * (1000000.0/cassette_sample_rate) - ddelta_us;
+    nsamples * (1000000.0f/cassette_sample_rate) - ddelta_us;
 
   while (nsamples-- > 0) {
     put_sample(orch90_left, TRUE, cassette_file);

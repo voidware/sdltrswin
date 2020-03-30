@@ -63,8 +63,8 @@ static void win_set_readonly(char *filename, int readonly)
   DWORD attr;
   attr = GetFileAttributes(filename);
   SetFileAttributes(filename, readonly
-		? (attr | FILE_ATTRIBUTE_READONLY)
-		: (attr & ~FILE_ATTRIBUTE_READONLY)) != 0;
+	  ? (attr | FILE_ATTRIBUTE_READONLY)
+	  : (attr & ~FILE_ATTRIBUTE_READONLY));
 }
 #endif
 

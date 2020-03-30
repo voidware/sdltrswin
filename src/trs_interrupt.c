@@ -33,6 +33,8 @@
  * Emulate interrupts
  */
 
+
+
 #include "z80.h"
 #include "trs.h"
 #include "trs_state_save.h"
@@ -77,9 +79,9 @@ int timer_overclock = 0;
 int timer_overclock_rate = 5;
 unsigned int cycles_per_timer;
 
-#define CLOCK_MHZ_1 1.77408
-#define CLOCK_MHZ_3 2.02752
-#define CLOCK_MHZ_4 4.05504
+#define CLOCK_MHZ_1 1.77408f
+#define CLOCK_MHZ_3 2.02752f
+#define CLOCK_MHZ_4 4.05504f
 
 /* Kludge: LDOS hides the date (not time) in a memory area across reboots. */
 /* We put it there on powerup, so LDOS magically knows the date! */

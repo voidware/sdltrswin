@@ -161,7 +161,7 @@ void do_emt_mouse()
 
 void do_emt_getddir()
 {
-  if (REG_HL + REG_BC > 0x10000 ||
+  if (REG_HL + REG_BC > 0x10000U ||
       REG_HL + strlen(trs_disk_dir) + 1 > REG_HL + REG_BC) {
     REG_A = EFAULT;
     REG_F &= ~ZERO_MASK;

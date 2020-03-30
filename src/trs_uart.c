@@ -163,7 +163,6 @@ xlate_baud(int trs_baud)
 void
 trs_uart_init(int reset_button)
 {
-  //int err;
 #if UARTDEBUG
   debug("trs_uart_init\n");
 #endif
